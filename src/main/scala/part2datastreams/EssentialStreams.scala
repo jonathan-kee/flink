@@ -5,24 +5,64 @@ import org.apache.flink.api.common.serialization.SimpleStringEncoder
 import org.apache.flink.core.fs.Path
 import org.apache.flink.streaming.api.functions.ProcessFunction
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.scala._ // Import Scala API and not Java Api
 import org.apache.flink.util.Collector
 
 object EssentialStreams {
 
-  def applicationTemplate(): Unit = {
-    // execution environment
+  def applicationTemplateExample(): Unit = {
+    // EntryPoint for the Flink API with tweak parallelism
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    // -------- In Between --------
+    // Code for computations will be here
+    // -------- In Between --------
+    // at the end
+    env.execute() // trigger all the computations that were DESCRIBED earlier
+  }
+
+  def applicationTemplate(): Unit = {
+    // EntryPoint for the Flink API
+    val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+
+    // -------- In Between --------
 
     // in between, add any sort of computations
     import org.apache.flink.streaming.api.scala._ // import TypeInformation for the data of your DataStreams
-    val simpleNumberStream: DataStream[Int] = env.fromElements(1,2,3,4)
+    val simpleNumberStream: DataStream[Int] = env.fromElements(1, 2, 3, 4)
 
     // perform some actions
     simpleNumberStream.print()
 
+    // -------- In Between --------
+
     // at the end
     env.execute() // trigger all the computations that were DESCRIBED earlier
+  }
+
+  def demoTransformationsWithoutParallelism(): Unit = {
+    // EntryPoint for the Flink API
+    val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+
+    // -------- In Between --------
+    val numbers: DataStream[Int] = env.fromElements(1, 2, 3, 4, 5)
+
+    // Map
+    val doubledNumbers: DataStream[Int] = numbers.map(_ * 2)
+
+    // FlatMap
+    val expandedNumbers: DataStream[Int] = numbers.flatMap(n => List(n, n + 1))
+
+    // Filter
+    val filteredNumbers: DataStream[Int] = numbers
+      .filter(_ % 2 == 0)
+
+    val finalData = expandedNumbers.writeAsText("output/expandedStream")
+    // Directory with 12 files
+
+    // -------- In Between --------
+
+    // At the end
+    env.execute()
   }
 
   // transformations
@@ -32,6 +72,7 @@ object EssentialStreams {
 
     // checking parallelism
     println(s"Current parallelism: ${env.getParallelism}")
+
     // set different parallelism
     env.setParallelism(2)
     println(s"New parallelism: ${env.getParallelism}")
@@ -48,6 +89,7 @@ object EssentialStreams {
       /* you can set parallelism here*/.setParallelism(4)
 
     val finalData = expandedNumbers.writeAsText("output/expandedStream") // directory with 12 files
+
     // set parallelism in the sink
     finalData.setParallelism(3)
 
@@ -160,6 +202,9 @@ object EssentialStreams {
   }
 
   def main(args: Array[String]): Unit = {
-    demoExplicitTransformations()
+    // demoExplicitTransformations()
+    // applicationTemplate()
+    // demoTransformations()
+    demoTransformationsWithoutParallelism()
   }
 }
